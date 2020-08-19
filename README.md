@@ -166,11 +166,10 @@ var products_dt_src = new OfficeUi.dataSource({
                                         dataRow.set('Productid', productid);
                                     }
                                 });
-
-if (!dataRow.Productid) {
-    var opt = dropdown.getValue();
-    dataRow.set('Productid', opt.value);
-}
+//how to get selected value of the dropdown
+var opt = dropdown.getValue();
+var opt_label = opt.label;
+var opt_value = opt.value;
 ```
 
 documentation on going....
