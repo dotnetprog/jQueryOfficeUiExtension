@@ -4,4 +4,4 @@ a jQuery plugin that extents fabric js components (with this , you can build edi
 documentation on going....
 
 
-#MAKE SURE YOU USE THE FABRIC JS FROM THE DEPENDENCIES DIRECTORY , SOME FIXES HAS BEEN ADDED TO THIS ONE.
+# MAKE SURE YOU USE THE FABRIC JS FROM THE DEPENDENCIES DIRECTORY , SOME FIXES HAS BEEN ADDED TO THIS ONE.
