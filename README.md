@@ -147,7 +147,31 @@ var inv_grid = $('#lineGrid').OfficeEditableTable({
             });
         });
 ```
+## Dropdown Component fabric js
 
+```javascript
+var products_dt_src = new OfficeUi.dataSource({
+    type: 'odata',
+    url: '/odata/Products',
+    async: false
+
+});
+ var dropdown = $('#container').OfficeUIDropdown({
+                                    datasource: products_dt_src,
+                                    labelkey: 'Name',
+                                    valuekey: 'Id',
+                                    selectedvalue: !!dataRow.Productid ? dataRow.Productid : null,
+                                    onChange: function (e) {
+                                        var productid = $(e.currentTarget).val();
+                                        dataRow.set('Productid', productid);
+                                    }
+                                });
+
+if (!dataRow.Productid) {
+    var opt = dropdown.getValue();
+    dataRow.set('Productid', opt.value);
+}
+```
 
 documentation on going....
 
