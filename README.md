@@ -9,7 +9,7 @@ The Datasource object is a must to use for using the officeui extensions.
 Currently odata is only supported as datasource type
 
 here's some exemples
-```
+```javascript
 var dt_src = new OfficeUi.dataSource({
               type: 'odata',
               queryOptions: {
