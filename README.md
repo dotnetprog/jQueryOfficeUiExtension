@@ -12,7 +12,8 @@ Coming soon:
 - Paging
 - UI Column Filtering
 - Plugin's Api Documentation & how to use
-
+## Demo
+<iframe width=1280 height=720 frameborder="0" scrolling="no" src="https://screencast-o-matic.com/embed?sc=cYj0YomYbK&v=5&ff=1" allowfullscreen="true"></iframe>
 ## DataSource
 
 The Datasource object is a must to use for using the officeui extensions.
