@@ -8,6 +8,20 @@ The Datasource object is a must to use for using the officeui extensions.
 
 Currently odata is only supported as datasource type
 
+Features: 
+- Column Sorting
+- COlumn Resizing
+- Commandbar customizable
+- CRUD Operations with Save changes
+- Inline Editing !
+
+Comming soon:
+- Paging
+- UI Column Filtering
+- Plugin's Api Documentation & how to use
+
+
+
 here's some exemples
 ```javascript
 var dt_src = new OfficeUi.dataSource({
