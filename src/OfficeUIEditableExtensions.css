@@ -1,0 +1,40 @@
+﻿thead.officeuiExtension > tr > th {
+    border: 1px solid #eaeaea;
+}
+
+    thead.officeuiExtension > tr > th.officesortable:hover {
+        background-color: #f4f4f4;
+        cursor: pointer;
+        outline: 1px solid transparent;
+    }
+
+thead.officeuiExtension > tr:hover {
+    background-color: unset !important;
+    cursor: unset !important;
+    outline: unset !important;
+}
+
+thead.officeuiExtension > tr > th {
+    position: relative;
+}
+
+th > div.colresize {
+    top: 0;
+    right: 0;
+    width: 5px;
+    position: absolute;
+    cursor: col-resize;
+    /* background-color: red; */
+    user-select: none;
+    height: 100%;
+}
+
+    th > div.colresize:hover {
+        border-right: 2px solid #eaeaea
+    }
+
+.ms-Table > tbody > tr:hover {
+    background-color: #f4f4f4;
+    cursor: pointer;
+    outline: 1px solid transparent;
+}

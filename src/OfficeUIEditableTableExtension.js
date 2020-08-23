@@ -5,7 +5,7 @@
     OfficeUi.dataSource = function (options) {
         this.Data = [];
         this.schema = options.schema;
-        
+        this.defaultorderbyQueryOption = !!options.queryOptions && !!options.queryOptions.$orderby ? options.queryOptions.$orderby : null
         var that = this;
         var asynchronous = options.async === undefined || options.asyncs === null ? true : options.async;
         this.buildNewRowData = function (r) {
@@ -18,13 +18,22 @@
             };
             return r;
         };
-        this.fetch = function (callback) {
+        this.fetch = function (callback,sort) {
             if (!!this.displayLoading)
                 this.displayLoading();
-
             switch (options.type) {
                 case "odata":
                     var u = options.url;
+                    if (!!sort) {
+                        options.queryOptions = options.queryOptions || {};
+                        options.queryOptions.$orderby = sort.field + " " + sort.type;
+                    } else {
+                        if (!!that.defaultorderbyQueryOption)
+                            options.queryOptions.$orderby = that.defaultorderbyQueryOption;
+                        else {
+                            !!options.queryOptions && !!options.queryOptions.$orderby && delete options.queryOptions.$orderby;
+                        }
+                    } 
                     if (!!options.queryOptions) {
                         var idx = 0;
                         for (var qo in options.queryOptions) {
@@ -225,11 +234,17 @@
                 return v.toString(16);
             });
         }
+        var sortIcons = {
+            asc: 'ms-Icon ms-Icon--SortUp',
+            desc: 'ms-Icon ms-Icon--SortDown',
+            default: 'ms-Icon ms-Icon--Sort'
+        };
         var datasource = config.datasource;
         var columns = config.columns;
         var commandbar = config.commandbar;
         var selectable = config.selectable;
         var editable = !config.IsReadOnly;
+        var events = config.events;
         config.schema = datasource.schema;
         var schema = config.schema;
         var table_uid = uuid();
@@ -383,11 +398,46 @@
             }
             return ntr;
         };
-        
-        
+        const setResizeListeners = function(div) {
+            var pageX, curCol, nxtCol, curColWidth, nxtColWidth;
+           // var table = document.getElementById(table_uid);
+            div.addEventListener('mousedown', function (e) {
+                curCol = e.target.parentElement;
+                nxtCol = curCol.nextElementSibling;
+                pageX = e.pageX;
+                curColWidth = curCol.offsetWidth
+                if (nxtCol)
+                    nxtColWidth = nxtCol.offsetWidth
+            });
+
+            document.addEventListener('mousemove', function (e) {
+                if (curCol) {
+                    var diffX = e.pageX - pageX;
+
+                    if (nxtCol)
+                        nxtCol.style.width = (nxtColWidth - (diffX)) + 'px';
+
+                    curCol.style.width = (curColWidth + diffX) + 'px';
+                }
+            });
+
+            document.addEventListener('mouseup', function (e) {
+                curCol = undefined;
+                nxtCol = undefined;
+                pageX = undefined;
+                nxtColWidth = undefined;
+                curColWidth = undefined;
+            });
+        }
+        const removeAllSortState = function (but) {
+            var columns = $('#' + table_uid + ' > thead > tr > th').not(but);
+            columns.removeAttr('sortstate');
+            columns.children('i').removeClass().addClass(sortIcons.default);
+        };
         const buildHeader = function() {
             var header = document.createElement('thead');
             var trHead = document.createElement('tr');
+            header.className = "officeuiExtension";
             if (selectable) {
                 var th_select = document.createElement("th");
                 th_select.className = "ms-Table-rowCheck";
@@ -416,9 +466,47 @@
                     th.style.display = 'none';
                 if (!!c.width)
                     th.style.width = c.width;
+                
 
 
                 th.innerText = c.label;
+                if (c.sortable && c.sort) {
+                    th.className = "officesortable";
+                    th.addEventListener('click', function (e) {
+                        var clickedelement = e.target;
+                        if (clickedelement.className === "colresize")
+                            return;
+                        var th = $(this);
+                        var sortState = th.attr('sortstate');
+                        var childIcon = th.children('i');
+                        if (!sortState || sortState == "default") {
+                            th.attr('sortstate', 'desc');
+                            childIcon.removeClass(sortIcons.default.split(' ')).addClass(sortIcons.desc.split(' '));
+
+                        } else if (sortState === 'desc') {
+                            th.attr('sortstate', 'asc');
+                            childIcon.removeClass(sortIcons.desc.split(' ')).addClass(sortIcons.asc.split(' '));
+                        } else {
+                            th.removeAttr('sortstate');
+                            childIcon.removeClass(sortIcons.asc.split(' ')).addClass(sortIcons.default.split(' '));
+                        }
+                        removeAllSortState(th);
+                        //add datasource sort logic here.
+                        refreshData();
+
+                    });
+                    th.setAttribute('sortfield', c.sort.sortedfield || c.field);
+                    var iconEl = document.createElement('i');
+                    iconEl.className = "ms-Icon ms-Icon--Sort";
+                    iconEl.style.float = "right";
+                    th.append(iconEl);
+                }
+                if (c.resizable) {
+                    var resizeDiv = document.createElement('div');
+                    resizeDiv.className = "colresize";
+                    setResizeListeners(resizeDiv);
+                    th.append(resizeDiv);
+                }
                 trHead.append(th);
             }
             header.append(trHead);
@@ -431,17 +519,24 @@
             var tr = document.createElement("tr");
             tr.setAttribute('uid', record.uid);
             tr.setAttribute('dataid', record[schema.key]);
-            if (editable) {
+            if (editable || (!!events && events.onRowDblClick)) {
                 tr.addEventListener('dblclick', function (e) {
                     var utr = $(this);
+                    var uid = utr.attr('uid');
+                    var dr = datasource.Data.filter(function (datarow) { return datarow.uid === uid; })[0];
+                    if (!!events && !!events.onRowDblClick) {
+                        events.onRowDblClick(dr);
+                        return;
+                    }
+                    
                     if (utr.attr('mode') === 'edit')
                         return;
 
                     utr.attr('mode', 'edited');
 
-                    var uid = utr.attr('uid');
+                   
 
-                    var dr = datasource.Data.filter(function (datarow) { return datarow.uid === uid; })[0];
+                   
                     dr.mode = 'edited';
 
 
@@ -468,6 +563,24 @@
                     var v = !!column.calculated ? column.calculated(record) : (record[column.field] || "");
                     switch (column.type) {
                         case 'datetime':
+                            var d = new Date(v);
+                            if (!!v && !!column.format && typeof (column.format) === "string") {
+                                var year = d.getFullYear();
+                                var month = d.getMonth() + 1;
+                                var day = d.getDate();
+                                var hours = d.getHours();
+                                var minutes = d.getMinutes();
+                                var seconds = d.getSeconds();
+                                var textval = column.format.replace('yyyy', year)
+                                    .replace('MM', month < 10 ? "0" + month : month)
+                                    .replace('dd', day < 10 ? "0" + day : day)
+                                    .replace('HH', hours < 10 ? "0" + hours : hours)
+                                    .replace('mm', minutes < 10 ? "0" + minutes : minutes)
+                                    .replace('ss', seconds < 10 ? "0" + seconds : seconds);
+                                td.innerText = textval;
+                            }
+                            else
+                                td.innerText = v;
                             break;
                         case 'decimal':
 
@@ -510,10 +623,17 @@
             }
             return tr;
         };
-        const buildBody = function() {
-
-            var tablebody = document.createElement('tbody');
-
+        const loadData = function (tablebody) {
+            $(tablebody).empty();
+            var sort = null;
+            var scs = $('#' + table_uid + ' > thead > tr > th[sortstate]');
+            var sortedColumn = scs.length > 0 ? scs[0] : null;
+            if (sortedColumn !== null) {
+                sort = {
+                    field: $(sortedColumn).attr('sortfield'),
+                    type: $(sortedColumn).attr('sortstate')
+                }
+            }
             datasource.fetch(function (records) {
                 for (var j = 0; j < records.length; j++) {
                     var record = records[j];
@@ -521,7 +641,24 @@
                     tablebody.append(tr);
                 }
 
-            });
+            }, sort);
+        };
+        const refreshData = function () {
+            loadData($('#' + table_uid + ' > tbody')[0]);
+        };
+
+        const buildBody = function() {
+
+            var tablebody = document.createElement('tbody');
+            loadData(tablebody);
+            //datasource.fetch(function (records) {
+            //    for (var j = 0; j < records.length; j++) {
+            //        var record = records[j];
+            //        var tr = buildTableRow(record);
+            //        tablebody.append(tr);
+            //    }
+
+            //});
             return tablebody;
         }
 
@@ -595,6 +732,13 @@
                 btn.className = "ms-CommandButton-button";
                 var icon = "";
                 switch (btnConfig.type) {
+                    case 'custom':
+
+                        icon = btnConfig.icon;
+                        btn.addEventListener('click', function (e) {
+                            btnConfig.onClick(e);
+                        });
+                        break;
                     case "create"://Addrow
 
                         icon = "ms-Icon ms-Icon--Add";
@@ -611,7 +755,14 @@
                             }
                         });
                         break;
+                    case "refresh":
+                        icon = "ms-Icon ms-Icon--Refresh";
+                        btn.addEventListener('click', function (e) {
+                            refreshData();
+                        });
+                        break;
                     case "save": //save new row and existing rows
+                        btnConfig.label = "Saved";
                         icon = "ms-Icon ms-Icon--Save";
                         btn.id = table_uid+'_save';
                         btn.addEventListener('click', function (e) {
@@ -645,7 +796,7 @@
                         break;
                 }
 
-                btn.innerHTML = '<span class="ms-CommandButton-icon ms-fontColor-themePrimary"><i class="' + icon + '"></i>' + (btnConfig.type === 'save' ? '</span><span class="ms-CommandButton-label">Saved</span>': '');
+                btn.innerHTML = '<span class="ms-CommandButton-icon ms-fontColor-themePrimary"><i class="' + icon + '"></i>' + (!!btnConfig.label ? '</span><span class="ms-CommandButton-label">' + btnConfig.label+'</span>': '');
                 btn.href = "javascript:void(0)";
                 btn_container.append(btn);
                 bar_mainarea.append(btn_container);
@@ -664,6 +815,7 @@
             officeEl: new fabric['Table'](document.getElementById(table_uid)),
             dataSource: datasource,
             getSelectedRows: getSelectedRows,
+            refresh: refreshData,
             addRow: addRow,
             deleteROw: deleteRow,
             updateRow: function (uid) {
