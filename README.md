@@ -1,13 +1,6 @@
 # jQueryOfficeUiExtension
 a jQuery plugin that extents fabric js components (with this , you can build editable grid from the table component)
 
-
-## DataSource
-
-The Datasource object is a must to use for using the officeui extensions.
-
-Currently odata is only supported as datasource type
-
 Features: 
 - Column Sorting
 - Column Resizing
@@ -19,6 +12,14 @@ Coming soon:
 - Paging
 - UI Column Filtering
 - Plugin's Api Documentation & how to use
+
+## DataSource
+
+The Datasource object is a must to use for using the officeui extensions.
+
+Currently odata is only supported as datasource type
+
+
 
 
 
