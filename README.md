@@ -10,12 +10,12 @@ Currently odata is only supported as datasource type
 
 Features: 
 - Column Sorting
-- COlumn Resizing
+- Column Resizing
 - Commandbar customizable
 - CRUD Operations with Save changes
 - Inline Editing !
 
-Comming soon:
+Coming soon:
 - Paging
 - UI Column Filtering
 - Plugin's Api Documentation & how to use
