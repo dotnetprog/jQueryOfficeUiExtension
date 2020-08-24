@@ -4,6 +4,9 @@ a jQuery plugin that extents fabric js components (with this , you can build edi
 Features: 
 - Column Sorting
 - Column Resizing
+- Column Templating
+- Column Formatting
+- Calculated Field/Column
 - Commandbar customizable
 - CRUD Operations with Save changes
 - Inline Editing !
