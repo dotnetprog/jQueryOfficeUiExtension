@@ -170,6 +170,46 @@ var inv_grid = $('#lineGrid').OfficeEditableTable({
             });
         });
 ```
+### Paging
+```javascript
+ var inv_grid = null;
+        $(document).ready(function () {
+
+            var dt_src = new OfficeUi.dataSource({
+                type: 'odata',
+                odata: {
+                    counturl:'/odata/Invoices('+$("#Id").val()+')/InvoiceLine/$count' //this config is used to display total records and for paging
+                },
+                queryOptions: {
+                    $filter: 'InvoiceId eq ' + $("#Id").val(),
+                    $expand: 'Product'
+                },
+                url: '/odata/InvoiceLine',
+                async: true,
+                schema: {
+                    key: 'Id'
+                },
+            });
+           
+
+            inv_grid = $('#lineGrid').OfficeEditableTable({
+                datasource: dt_src,
+                commandbar: [
+                   //define your commands here...
+                ],
+                columns: [
+                    //define columns here...
+                ],
+                paging: {
+                    displayCount: true,//shows the count in footer , if datasource type = odata, counturl on odata config of datasource must be set
+                    size: 5 //determines how many records per page.
+                },
+                selectable: true,
+                IsReadOnly: false,
+
+            });
+        });
+```
 ## Dropdown Component fabric js
 
 ```javascript
