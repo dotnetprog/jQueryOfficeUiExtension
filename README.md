@@ -10,14 +10,16 @@ Features:
 - Commandbar customizable
 - CRUD Operations with Save changes
 - Inline Editing !
+- Paging
+- Scroll with fixed header
 
 Coming soon:
-- Paging
 - UI Column Filtering
+- New datasource type "custom"
 - Plugin's Api Documentation & how to use
 ## Demo
 
-https://screencast-o-matic.com/watch/cYj0YomYbK
+https://screencast-o-matic.com/watch/cYjObgmB4o
 
 ## DataSource
 
