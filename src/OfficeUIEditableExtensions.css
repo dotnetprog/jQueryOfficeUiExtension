@@ -14,8 +14,15 @@ thead.officeuiExtension > tr:hover {
     outline: unset !important;
 }
 
-thead.officeuiExtension > tr > th {
+div.officeuiExtension-table-wrapper {
     position: relative;
+    overflow:auto;
+}
+thead.officeuiExtension > tr > th {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 1000000000000000000000000;
 }
 
 th > div.colresize {
@@ -37,4 +44,22 @@ th > div.colresize {
     background-color: #f4f4f4;
     cursor: pointer;
     outline: 1px solid transparent;
+}
+.officeui-table-footer {
+    height: 2rem;
+    width: 100%;
+    font-family: Segoe UI WestEuropean,Segoe UI,-apple-system,BlinkMacSystemFont,Roboto,Helvetica Neue,sans-serif;
+    -webkit-font-smoothing: antialiased;
+    background-color: #f4f4f4;
+    padding-left: 5px;
+}
+.officeui-table-pagingIcon {
+    cursor: pointer;
+    margin-right: 5px;
+    color: black;
+}
+.officeui-table-pagingIcon-disabled {
+    cursor: auto;
+    margin-right: 5px;
+    color:lightgray;
 }
