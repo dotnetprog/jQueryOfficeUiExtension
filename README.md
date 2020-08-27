@@ -78,6 +78,7 @@ $.fn.OfficeEditableTable
     - paging:object defines the pagination of the gird/table
       - size:number number of records per page
       - displayCount: display the sum total rows. if size is defined, the index is shown as well.
+
 $.fn.OfficeEditableTable command
 - Object
   - type:string
