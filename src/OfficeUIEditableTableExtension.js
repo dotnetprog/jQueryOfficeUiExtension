@@ -18,7 +18,7 @@
             };
             return r;
         };
-        this.fetch = function (callback,sort) {
+        this.fetch = function (callback,sort,paging) {
             if (!!this.displayLoading)
                 this.displayLoading();
             switch (options.type) {
@@ -34,6 +34,19 @@
                             !!options.queryOptions && !!options.queryOptions.$orderby && delete options.queryOptions.$orderby;
                         }
                     } 
+
+                    if (!!paging) {
+                        paging.currentPage = paging.currentPage || 1;
+                        options.queryOptions = options.queryOptions || {};
+                        options.queryOptions.$top = paging.size;
+                        if (paging.currentPage > 1) {
+                            options.queryOptions.$skip = paging.size * (paging.currentPage - 1);
+                        } else {
+                            !!options.queryOptions.$skip && delete options.queryOptions.$skip;
+                        }
+                        
+                    }
+
                     if (!!options.queryOptions) {
                         var idx = 0;
                         for (var qo in options.queryOptions) {
@@ -53,6 +66,8 @@
                         async: asynchronous,
                         contentType: "application/json",
                         success: function (resp) {
+
+
                             that.Data = resp.value.map(
                                 function (d) {
                                     d.set = function (fn, fv) {
@@ -129,7 +144,7 @@
             
 
         };
-        this.delete = function (datarow, isLast ,cb) {
+        this.delete = !!options.delete ? options.delete : function (datarow, isLast ,cb) {
             switch (options.type) {
                 case 'odata':
                    
@@ -157,7 +172,7 @@
                     break;
             }
         };
-        this.update = function (datarow, isLast,cb) {
+        this.update = !!options.update ? options.update :function (datarow, isLast,cb) {
             switch (options.type) {
                 case 'odata':
                     var r = {};
@@ -216,6 +231,42 @@
                         break;
                 }
 
+
+            }
+        };
+        this.getDirtyRows = function () {
+            var dirtyRows = that.Data.filter(function (d) { return !!d.mode; });
+            return dirtyRows;
+        };
+        this.getCount = !!options.getCount ? options.getCount : function (cb) {
+            switch (options.type) {
+                case 'odata':
+                    if (!options.odata || !options.odata.counturl) {
+                        cb(that.Data.length);
+                        return;
+                    }
+                        
+                    var u = options.odata.counturl;
+                    //Invoices(87d82f34-3c5b-4405-b173-bdb0e6c4c252)/InvoiceLine/$count
+                    
+                    $.ajax({
+                        type: 'GET',
+                        url: u,
+                        dataType: 'json',
+                        async: asynchronous,
+                        contentType: "application/json",
+                        success: function (resp) {
+                            
+                            cb(resp);
+                           
+                        },
+                        error: function (err) {
+                            console.error(err);
+                        }
+                    });
+                    break;
+                default:
+                    cb(that.Data.length);
             }
         };
 
@@ -239,6 +290,7 @@
             desc: 'ms-Icon ms-Icon--SortDown',
             default: 'ms-Icon ms-Icon--Sort'
         };
+        var that = this;
         var datasource = config.datasource;
         var columns = config.columns;
         var commandbar = config.commandbar;
@@ -246,10 +298,17 @@
         var editable = !config.IsReadOnly;
         var events = config.events;
         config.schema = datasource.schema;
+        var paging = config.paging;
         var schema = config.schema;
+        var rowHeight = 46;
         var table_uid = uuid();
         const showDirty = function () {
-            $('#' + table_uid + '_save > span.ms-CommandButton-label').text('Unsaved changes');
+
+            if (datasource.getDirtyRows().length > 0)
+                $('#' + table_uid + '_save > span.ms-CommandButton-label').text('Unsaved changes');
+            else {
+                $('#' + table_uid + '_save > span.ms-CommandButton-label').text('Saved');
+            }
         };
         const showSaving = function (isSaved) {
             if (!isSaved) {
@@ -261,6 +320,7 @@
             }
 
         };
+
         datasource.onValueChanged = function (d, fn, fv) {
             showDirty();
         }
@@ -476,6 +536,11 @@
                         var clickedelement = e.target;
                         if (clickedelement.className === "colresize")
                             return;
+                        if (datasource.getDirtyRows().length > 0) {
+                            alert('Save changes before change page');
+                            return;
+                        }
+
                         var th = $(this);
                         var sortState = th.attr('sortstate');
                         var childIcon = th.children('i');
@@ -639,12 +704,23 @@
                     var record = records[j];
                     var tr = buildTableRow(record);
                     tablebody.append(tr);
-                }
 
-            }, sort);
+                }
+                setupTableheight();
+                refreshFooter();
+            }, sort,paging);
+        };
+        const refreshFooter = function () {
+            if (!!paging) {
+                var footer = that.children('div.officeui-table-footer');
+                footer.length > 0 && footer.replaceWith(buildFooter());
+                footer.length == 0 && that.append(buildFooter());
+                
+            }
         };
         const refreshData = function () {
             loadData($('#' + table_uid + ' > tbody')[0]);
+            //refreshFooter();
         };
 
         const buildBody = function() {
@@ -674,11 +750,163 @@
             table.append(buildBody());
             return table;
         }
+        const tableWrapper = function (table) {
+            var wrapDiv = document.createElement('div');
+            wrapDiv.className = 'officeuiExtension-table-wrapper';
+
+            if (!!config.minheight)
+                wrapDiv.style.minHeight = config.minheight;
+            if (!!config.maxheight)
+                wrapDiv.style.maxheight = config.maxheight;
+            if (!!config.height)
+                wrapDiv.style.height = config.height;
+           
+            wrapDiv.append(table);
+            return wrapDiv;
+        };
+        const setupTableheight = function () {
+            if (!!paging && paging.size) {
+                var wd = that.children('div.officeuiExtension-table-wrapper');
+                var header_h = wd.children('table').children('thead').outerHeight(true);
+                rowHeight = $('#' + table_uid + ' > tbody > tr:first').outerHeight(true);
+                var h = ((paging.size * rowHeight) + header_h) + 'px';
+                wd.css('height', h);
+                // wrapDiv.style.height = (paging.size * rowHeight) + 'px';
+            }
+        }
+        const buildFooter = function () {
+            const createFooterSpan = function (arg) {
+                var s = document.createElement('span');
+                s.className = !!arg && typeof (arg) === 'string' ? "officeui-table-pagingIcon" : "";
+                if (!!arg && typeof (arg) === 'string') {
+                    var i = document.createElement('i');
+                    i.className = arg;
+                    s.append(i);
+                } else if (!!arg && typeof (arg) === 'number') {
+                    s.innerText = arg;
+                }
+                return s;
+                
+            };
+            var footerDiv = document.createElement('div');
+            footerDiv.className = 'officeui-table-footer';
+            datasource.getCount(function (count) {
+                if (paging.displayCount == true) {
+                    var divCounter = document.createElement('div');
+                    divCounter.className = "ms-Grid-col ms-sm6";
+                    var counter = document.createElement('span');
+                    if (!!paging.size) {
+                        var indexCount = (paging.currentPage || 1) > 1 ? (((paging.currentPage || 1) - 1) * paging.size) + datasource.Data.length : datasource.Data.length;
+                        counter.innerText = indexCount + " out of " + count + " records";
+                    }
+                    else
+                        counter.innerText = count + " records";
+                    divCounter.append(counter);
+                    footerDiv.append(divCounter);
+
+                }
+                if (!!paging.size && paging.size > 0) {
+
+                    if (!paging.currentPage) {
+                        paging.currentPage = 1;
+                    }
+                    var pagingDiv = document.createElement('div');
+                    pagingDiv.className = "ms-Grid-col ms-sm6";
+                    pagingDiv.style.textAlign = "right";
+                   // pagingDiv.style.color = 'lightgray';
+                    var firstPage = createFooterSpan("ms-Icon ms-Icon--ChevronLeftEnd6");
+
+                    
+                    if (paging.currentPage === 1)
+                        firstPage.className = 'officeui-table-pagingIcon-disabled';
+                    else {
+                        firstPage.addEventListener('click', function (e) {
+                            if (datasource.getDirtyRows().length > 0) {
+                                alert('Save changes before change page');
+                                return;
+                            }
+                            paging.currentPage = 1;
+                            refreshData();
+
+                        });
+                    }
+                    var prevPage = createFooterSpan("ms-Icon ms-Icon--ChevronLeftSmall");
+
+                   
+                    if (paging.currentPage === 1)
+                        prevPage.className = 'officeui-table-pagingIcon-disabled';
+                    else {
+                        prevPage.addEventListener('click', function (e) {
+                            if (datasource.getDirtyRows().length > 0) {
+                                alert('Save changes before change page');
+                                return;
+                            }
+                            if (paging.currentPage > 1) {
+                                paging.currentPage = paging.currentPage - 1;
+                                refreshData();
+                            }
+
+                        });
+                    }
+
+                    var pageNumber = createFooterSpan(paging.currentPage);
+                    pageNumber.style.marginRight = "4px";
+                    var nextPage = createFooterSpan("ms-Icon ms-Icon--ChevronRightSmall");
+                    
+                    var LastPage = createFooterSpan("ms-Icon ms-Icon--ChevronRightEnd6");
+                    
+                    if (count <= (paging.size * paging.currentPage)) {
+                        nextPage.className = 'officeui-table-pagingIcon-disabled';
+                        LastPage.className = 'officeui-table-pagingIcon-disabled';
+                    } else {
+                        nextPage.addEventListener('click', function (e) {
+                            if (datasource.getDirtyRows().length > 0) {
+                                alert('Save changes before change page');
+                                return;
+                            }
+                            if (count > (paging.size * paging.currentPage)) {
+                                paging.currentPage = paging.currentPage + 1;
+                                refreshData();
+                            }
+
+                        });
+                        LastPage.addEventListener('click', function (e) {
+                            if (datasource.getDirtyRows().length > 0) {
+                                alert('Save changes before change page');
+                                return;
+                            }
+                            if (count > (paging.size * paging.currentPage)) {
+                                paging.currentPage = Math.ceil(count / paging.size);
+                                refreshData();
+                            }
+
+                        });
+                    }
+
+
+                    pagingDiv.append(firstPage);
+                    pagingDiv.append(prevPage);
+                    pagingDiv.append(pageNumber);
+                    pagingDiv.append(nextPage);
+                    pagingDiv.append(LastPage);
+                    footerDiv.append(pagingDiv);
+                }
+            });
+           
+           
+             
+
+            return footerDiv;
+        };
 
         var t = buildTable();
-        this.append(t);
-        if (!!config.minheight)
-            this.css('min-height', config.minheight);
+        this.append(tableWrapper(t));
+       
+       
+       /* if (!!paging) {
+            var footer = buildFooter();
+            this.append(footer);
+        }*/
 
        
         const getSelectedRows = function () {
@@ -706,11 +934,12 @@
             $('#' + table_uid + ' > tbody > tr[uid="' + datarow.uid + '"]').remove();
             if (datarow.mode !== 'new') {
                 datarow.mode = 'removed';
-                showDirty();
+                
             } else {
                 var idx = datasource.Data.indexOf(datarow);
                 datasource.Data.splice(idx, 1);
             }
+            showDirty();
         };
        
         if (!!commandbar) {
@@ -785,6 +1014,7 @@
                                 }
                                 if (isLast) {
                                     showSaving(true);
+                                    refreshFooter();
                                 }
 
 
