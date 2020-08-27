@@ -92,6 +92,25 @@ $.fn.OfficeEditableTable command
   - label:string label for button of type 'custom'
   - icon:string fabric ui icon to use (works only with custom)
   
+$.fn.OfficeEditableTable column
+- Object
+  - width:string width of the column
+  - label*:string label of the column
+  - field:string field name of the data model that represents the column
+  - hidden:boolean show or hide a column
+  - resizable:boolean allow to resize the width of the column
+  - sortable:boolean allow to sort the column (asc/desc)
+  - sort(required* if sortable enabled): object 
+    - Properties:
+      - sortedfield:string the field name of the data model to use when sorting this column, useful when it's virtual/calculated column
+  - calculated:function fired to display the value of the data of the column, the datarow is passed as argument
+  - triggerFields:array<string> all the field names that should trigger the calculated function in order to display the data, should return a value.
+  - template:function datarow is passed as the argument , used to override the readonly display, to  should return a value or html
+  - defaultvalue:any used to define a default value of the column, can be used with hidden = true
+  - editor:object overrides the out of the box editing of the column/cell
+    - Properties:
+      - template:function container of the cell is passed as first argument,  datarow is passed as second argument,is used to ovveride the default editing control of the data type, should not return a value.
+  
 
 here's an exemple on how to setup the plugin
 ```javascript
