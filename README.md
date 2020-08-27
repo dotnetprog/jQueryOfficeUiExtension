@@ -94,6 +94,8 @@ $.fn.OfficeEditableTable command
   
 $.fn.OfficeEditableTable column
 - Object
+  - type:string define the datatype of the column, default is string (so far, decimal,string and datetime can be used)
+  - format:object|string define how the data should be displayed ( current support is 'money'(decimal)|'yyyy-MM-dd HH:mm:ss'(datetime) or  { fixed:2 } (this used toFixed() for decimal )
   - width:string width of the column
   - label*:string label of the column
   - field:string field name of the data model that represents the column
