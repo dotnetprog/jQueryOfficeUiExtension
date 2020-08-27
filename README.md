@@ -27,11 +27,21 @@ The Datasource object is a must to use for using the officeui extensions.
 
 Currently odata is only supported as datasource type
 
+### Api Reference
+* = required.
+OfficeUi.dataSource constructor 
+- paramaters
+-- Object with following properties
+--- type*:string (only 'odata' is supported at the moment)
+--- queryOptions:object containing all the odata queryOptions/queryStrings for the url
+--- url*:string represent the endpoint to call to retrieve data
+--- async:boolean if the call is async or sync
+--- schema*:object defines the object model that the datasource will handle, mainly used to determine the primary key of the record.
+--- odata:object defines the odata setting , currently used to setup the count odata call for the fouter if displayed.
 
 
 
-
-here's some exemples
+### here's some exemples
 ```javascript
 var dt_src = new OfficeUi.dataSource({
               type: 'odata',
